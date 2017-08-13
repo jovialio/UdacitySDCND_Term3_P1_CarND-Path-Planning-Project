@@ -1,6 +1,53 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
+
+---
+## Reflection
+
+This project had mostly made use of the topic on **Behaviour Planning** and **Trajectory Generation**. Many thanks to the Udacity team for their guidance on the project especially on the use of spline library for trajectory generation using waypoints forecasted. There are still room for improvements by better planning for more aggressive but safe lane changes such as speeding up for change lane instead of slowing down to wait for target lane vehicle to pass before changing lanes. This implementation is safe but penalizes speed of completing the circuit as it ocassionally leads to difficulties changing lanes. Overall, the implementation in it current state prioritizes *safety* followed by *speed* in completing the circuit.
+
+Below is a short summary of my implementation for the project that covers the major rubrics demanded of the project. Code in `main.cpp` are also commented to provide explanation.
+
+## Implementation
+
+For ease of reading, we shall call the Autonomous Vehicle *ego*. ;)
+
+1. The code compiles correctly.
+    1. Code is able to comple with cmake.
+
+2. The car is able to drive at least 4.32 miles without incident.
+    1. ego is able to meet specifications.
+
+3. The car drives according to the speed limit.
+    1. Overall speed limit for vehicle is set to 49.5MPH which is the limit of the road. While travelling, speed limit on the 3 lanes are dynamically calculated based on the speed of the immediate vehicle in each lane closest to ego.
+
+4. Max Acceleration and Jerk are not Exceeded.
+    1. Max Acceleration and Jerk are normally not exceed. Exceptions is deliberatly added in the case of emergency breaking by the vehicle infront of ego where projected future s of vehicle in front and ego will come to <10m (Usual `SAFETY_DISTANCE` is set to 30m). In this case, reference velocity will be suddenly decreased by 2MPH(0.894m/s) or subjected to a deceleration of 44.7m/s2 in 0.02s interval due the the plot points being spaced by 0.02s interval.
+
+5. Car does not have collisions.
+    1. ego does not have any collision by maintaining a front vehicle safety margin of 30m and back vehicle safety margin of 20m during considerations for lane change. This reduction in safety margin for back vehicle allows easier lane changing as long as ego is 20m cleared of rear vehicle in the target lane. Lane keeping only maintains a 30m `SAFETY_DISTANCE` from front vehicle.
+
+6. The car stays in its lane, except for the time between changing lanes.
+    1. ego's priority is safety followed by attempting to complete the circuit in the fastest time. ego will change lane as long as it detects a potentially faster lane other than its own lane. This is the only time when ego will consider making a lane change safely.
+
+7. The car is able to change lanes.
+    1. Yes, ego is able to change lanes.
+
+8. There is a reflection on how to generate paths.
+    1. Frenet s,d coordinates is used most of the time during planning for checking ego's current position (s,d) and other vehicles' (s,d). Frenet coordinates allows better gauge of ego's location versus other vehicle in order to effect a safe Keep Lane (KL), Lane Change Left (LCL) or Lane Change Right (LCR), which are the 3 simple states in the simulation.
+    2. Once the state is determined, 3 more waypoints in xy coordinates will be determined taking into considerations the chosen s (distance ahead) and d (lane choice). These 3 wayspoints will be picked roughly in 30m interval from ego's current position or previously planned path s position.
+    3. The 3 xy coordinate waypoints will be then combined with either the last 2 points from previously planned path or 2 newly generated points based on ego's current orientation.
+    4. Using these 5 xy points, spline library will be used to generate the remaining points in between to make up a total of 50 points for ego's trajectory.
+        1. To generate these 50 points, spline library will be used on xy coordinates converted from map space to car space by using a rotation matrix and ego is at the centre (0,0) position.
+        2. Suitable number of points will be filled in between the way points taking into consideration the current reference velocity (ref_v) and the uniqueness of simulator which drops points in 0.02s interval.
+        3. Once 50 points are generated, they will be pushed to `next_x_vals` and `next_y_vals` for input into simulator for execution.
+
+## Path Planning Video
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/LQYuXH4gVlk/0.jpg)](https://www.youtube.com/watch?v=LQYuXH4gVlk)
+
+---
+
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
 
